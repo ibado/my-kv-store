@@ -1,0 +1,7 @@
+[
+  {
+    "directory": ".",
+    "command": "cc -Wall -Wextra -xc -std=c99 -pedantic main.c -o main",
+    "file": "main.c"
+  }
+]
