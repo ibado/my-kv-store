@@ -190,6 +190,7 @@ void ht_put(hash_table *ht, char *key, char *value) {
   }
   // upsert it in the colls list
   _ll_upsert(&(ht->slots[idx].colls), buf_key, buf_val);
+  ht->len++;
 }
 
 bool ht_get(hash_table *ht, char *key, buffer *out) {
@@ -210,16 +211,13 @@ bool ht_del(hash_table *ht, char *key) {
   if (ht->slots[idx].key.data == NULL)
     return false;
   if (strcmp(ht->slots[idx].key.data, key) == 0) {
+    buf_del(&ht->slots[idx].key);
+    buf_del(&ht->slots[idx].value);
     if (ht->slots[idx].colls) {
       ht_entry *head = _ll_pop(&(ht->slots[idx].colls));
       ht->slots[idx].key = head->key;
       ht->slots[idx].value = head->value;
-      buf_del(&head->key);
-      buf_del(&head->value);
       free(head);
-    } else {
-      buf_del(&ht->slots[idx].key);
-      buf_del(&ht->slots[idx].value);
     }
     assert(ht->len > 0);
     ht->len--;

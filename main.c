@@ -42,25 +42,26 @@ int main(void) {
     char *arg2 = strtok(NULL, " ");
     char *arg3 = strtok(NULL, " ");
     assert(arg1);
-    assert(arg2); // TODO: print nice message instead
-    if (strcmp(arg1, "get") == 0) {
+    if (strcmp(arg1, "get") == 0 && arg2) {
       buffer out;
       if (ht_get(&ht, arg2, &out)) {
         printf("%s\n", out.data);
       } else {
         puts("nil");
       }
-    } else if (strcmp(arg1, "put") == 0) {
+    } else if (strcmp(arg1, "put") == 0 && arg2) {
       if (arg3 == NULL) {
         puts("bad cmd! value is missing");
         continue;
       }
       ht_put(&ht, arg2, arg3);
-    } else if (strcmp(arg1, "del") == 0) {
+    } else if (strcmp(arg1, "del") == 0 && arg2) {
       if (ht_del(&ht, arg2))
         puts("OK");
       else
         puts("nil");
+    } else if (strcmp(arg1, "dbg") == 0) {
+      ht_dbg(&ht);
     } else {
       puts("Invalid command!");
     }
