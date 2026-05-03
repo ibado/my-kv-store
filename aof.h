@@ -57,9 +57,9 @@ void aof_append(aof *f, log l) {
   case DEL:
     sprintf(content, "DEL:%s", l.op.del.key);
     break;
-    fprintf(f->file, "%s%s\n", "line", content);
-    fflush(f->file);
   }
+
+  fprintf(f->file, "%s\n", content);
 }
 
 void aof_close(aof *f) {

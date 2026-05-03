@@ -1,3 +1,4 @@
+#include "aof.h"
 #include "hashtable.h"
 #include <assert.h>
 #include <signal.h>
@@ -33,6 +34,7 @@ int main(void) {
   puts("=========== my key-value store 0.0.1 ===========");
   char cmd[CMD_BUFFER_SIZE] = {0};
   hash_table ht = ht_init();
+  aof f = aof_init("log.txt");
   while (true) {
     printf("> ");
     read_stdin(cmd, CMD_BUFFER_SIZE);
@@ -55,16 +57,22 @@ int main(void) {
         continue;
       }
       ht_put(&ht, arg2, arg3);
+      log l = {.type = PUT, .op = {.put = {.key = arg2, .value = arg3}}};
+      aof_append(&f, l);
     } else if (strcmp(arg1, "del") == 0 && arg2) {
-      if (ht_del(&ht, arg2))
+      if (ht_del(&ht, arg2)) {
+        log l = {.type = DEL, .op = {.del = {.key = arg2}}};
+        aof_append(&f, l);
         puts("OK");
-      else
+      } else {
         puts("nil");
+      }
     } else if (strcmp(arg1, "dbg") == 0) {
       ht_dbg(&ht);
     } else {
       puts("Invalid command!");
     }
   }
+  aof_close(&f);
   ht_free(&ht);
 }
