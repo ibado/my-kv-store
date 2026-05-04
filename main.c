@@ -1,6 +1,6 @@
+#include "aof.h"
 #include "hashtable.h"
 #include "util.h"
-#include "aof.h"
 #include <assert.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -16,24 +16,25 @@ void int_handler() {
   running = false;
 }
 
+void fill_ht(log *l, void *ctx) {
+  hash_table *ht = ctx;
+  switch (l->type) {
+  case PUT:
+    ht_put(ht, l->op.put.key, l->op.put.value);
+    break;
+  case DEL:
+    ht_del(ht, l->op.del.key);
+    break;
+  }
+}
+
 int main(void) {
   signal(SIGINT, int_handler);
   puts("=========== my key-value store 0.0.1 ===========");
   char cmd[CMD_BUFFER_SIZE] = {0};
   hash_table ht = ht_init();
   aof f = aof_init("log.txt");
-  aof_it it = aof_it_new(&f);
-  log l;
-  while (aof_it_next(&it, &l)) {
-    switch (l.type) {
-    case PUT:
-      ht_put(&ht, l.op.put.key, l.op.put.value);
-      break;
-    case DEL:
-      ht_del(&ht, l.op.del.key);
-      break;
-    }
-  }
+  aof_foreach(&f, fill_ht, &ht);
   while (true) {
     printf("> ");
     read_line(cmd, CMD_BUFFER_SIZE, stdin);

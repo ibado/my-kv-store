@@ -36,16 +36,10 @@ typedef struct log {
   enum operation_type type;
 } log;
 
-typedef struct aof_it {
-  FILE *f;
-} aof_it;
-
 aof aof_init(const char *path);
 void aof_append(aof *f, log l);
 void aof_close(aof *f);
-
-aof_it aof_it_new(aof *f);
-bool aof_it_next(aof_it *fit, log *out);
+void aof_foreach(aof *f, void (*on_each)(log *, void *), void *ctx);
 
 aof aof_init(const char *path) {
   FILE *f = fopen(path, "a");
@@ -81,38 +75,34 @@ void aof_close(aof *f) {
   }
 }
 
-aof_it aof_it_new(aof *f) {
+void aof_foreach(aof *f, void (*on_each)(log *, void *), void *ctx) {
   assert(f);
   FILE *fr = fopen(f->path, "r");
   if (fr == NULL) {
     perror("Error opening the file");
-    return (aof_it){0};
+    return;
   }
-  return (aof_it){.f = fr};
-}
-
-bool aof_it_next(aof_it *fit, log *out) {
-  if (fit->f == NULL)
-    return false;
-  char line[256] = {0};
-  read_line(line, 256, fit->f);
-  if (strlen(line) == 0) {
-    fclose(fit->f);
-    fit->f = NULL;
-    return false;
+  while (true) {
+    char line[256] = {0};
+    read_line(line, 256, fr);
+    if (line[0] == '\0') {
+      fclose(fr);
+      return;
+    }
+    char *op = strtok(line, ":");
+    char *key = strtok(NULL, ":");
+    char *val = strtok(NULL, ":");
+    log out = {0};
+    if (strcmp(op, "PUT") == 0 && key && val) {
+      out.type = PUT;
+      out.op.put.key = key;
+      out.op.put.value = val;
+    } else if (strcmp(op, "DEL") == 0 && key) {
+      out.type = DEL;
+      out.op.del.key = key;
+    }
+    on_each(&out, ctx);
   }
-  char *op = strtok(line, ":");
-  char *key = strtok(NULL, ":");
-  char *val = strtok(NULL, ":");
-  if (strcmp(op, "PUT") == 0 && key && val) {
-    out->type = PUT;
-    out->op.put.key = key;
-    out->op.put.value = val;
-  } else if (strcmp(op, "DEL") == 0 && key) {
-    out->type = DEL;
-    out->op.del.key = key;
-  }
-  return true;
 }
 
 #endif
