@@ -3,8 +3,8 @@
 
 #include "util.h"
 #include <assert.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
 typedef struct aof {
@@ -92,9 +92,15 @@ aof_it aof_it_new(aof *f) {
 }
 
 bool aof_it_next(aof_it *fit, log *out) {
+  if (fit->f == NULL)
+    return false;
   char line[256] = {0};
   read_line(line, 256, fit->f);
-  if (strlen(line) == 0) return false;
+  if (strlen(line) == 0) {
+    fclose(fit->f);
+    fit->f = NULL;
+    return false;
+  }
   char *op = strtok(line, ":");
   char *key = strtok(NULL, ":");
   char *val = strtok(NULL, ":");

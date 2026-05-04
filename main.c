@@ -23,10 +23,8 @@ int main(void) {
   hash_table ht = ht_init();
   aof f = aof_init("log.txt");
   aof_it it = aof_it_new(&f);
-  while (true) {
-    log l;
-    bool ok = aof_it_next(&it, &l);
-    if (!ok) break;
+  log l;
+  while (aof_it_next(&it, &l)) {
     switch (l.type) {
     case PUT:
       ht_put(&ht, l.op.put.key, l.op.put.value);
