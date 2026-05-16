@@ -1,5 +1,5 @@
-#ifndef HASHTABLE
-#define HASHTABLE
+#ifndef HASHTABLE_H
+#define HASHTABLE_H
 
 #include <assert.h>
 #include <stdbool.h>
@@ -99,6 +99,8 @@ bool _ll_upsert(ht_entry **head, buffer key, buffer value) {
   ht_entry **curr = head;
   while (*curr != NULL) {
     if (strcmp((*curr)->key.data, key.data) == 0) {
+      buf_del(&key);
+      buf_del(&((*curr)->value));
       (*curr)->value = value;
       return true;
     }
@@ -189,8 +191,10 @@ void ht_put(hash_table *ht, char *key, char *value) {
     return;
   }
   // upsert it in the colls list
-  _ll_upsert(&(ht->slots[idx].colls), buf_key, buf_val);
-  ht->len++;
+  bool updated = _ll_upsert(&(ht->slots[idx].colls), buf_key, buf_val);
+  if (!updated) {
+    ht->len++;
+  }
 }
 
 bool ht_get(hash_table *ht, char *key, buffer *out) {
@@ -224,6 +228,9 @@ bool ht_del(hash_table *ht, char *key) {
     return true;
   }
   bool deleted = _ll_del(&(ht->slots[idx].colls), key);
+  if (deleted) {
+    ht->len--;
+  }
   return deleted;
 }
 
@@ -249,7 +256,8 @@ void ht_free(hash_table *ht) {
 
 void ht_dbg(hash_table *ht) {
   puts("=============================");
-  printf("Load factor: %f\n", (float)ht->len / ht->cap);
+  printf("Load factor: %f, len: %ld, cap: %ld\n", (float)ht->len / ht->cap,
+         ht->len, ht->cap);
   for (size_t i = 0; i < ht->cap; i++) {
     if (ht->slots[i].key.data) {
       printf("(%s => %s)", ht->slots[i].key.data, ht->slots[i].value.data);
