@@ -1,5 +1,5 @@
-#ifndef AOF
-#define AOF
+#ifndef AOF_H
+#define AOF_H
 
 #include "util.h"
 #include <assert.h>
